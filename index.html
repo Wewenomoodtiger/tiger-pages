@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiger 跑步数据分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+body { background:#f1f5f9; padding:20px; }
+.container { max-width:1200px; margin:0 auto; }
+h1 { font-size:28px; color:#1e293b; margin-bottom:20px; display:flex; align-items:center; gap:12px; }
+h1 small { font-size:14px; color:#64748b; font-weight:400; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+.kpi { background:#fff; border-radius:12px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.kpi .val { font-size:24px; font-weight:700; color:#2563eb; margin:4px 0; }
+.kpi .lab { font-size:12px; color:#64748b; }
+.kpi .unit { font-size:13px; color:#94a3b8; }
+.kpi.zone-green .val { color:#059669; }
+.kpi.zone-red .val { color:#dc2626; }
+.kpi.accent .val { color:#7c3aed; }
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.chart-card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.chart-card.full { grid-column:1/-1; }
+.chart-card h3 { font-size:14px; color:#475569; margin-bottom:12px; }
+.chart-card canvas { max-height:300px; }
+.insight-box { background:#fff; border-radius:12px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); grid-column:1/-1; }
+.insight-box h3 { font-size:14px; color:#475569; margin-bottom:8px; }
+.insight-box ul { list-style:none; }
+.insight-box li { padding:6px 0; font-size:13px; color:#334155; border-bottom:1px solid #f1f5f9; }
+.insight-box li:last-child { border:0; }
+.insight-box li em { color:#2563eb; font-style:normal; font-weight:600; }
+.insight-box li .badge { display:inline-block; padding:1px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.insight-box li .badge.green { background:#d1fae5; color:#065f46; }
+.insight-box li .badge.red { background:#fee2e2; color:#991b1b; }
+.insight-box li .badge.blue { background:#dbeafe; color:#1e40af; }
+.zone2-box { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,.3); }
+.zone2-box .val { font-size:36px; font-weight:800; }
+.zone2-box .lab { font-size:13px; opacity:.9; margin-top:4px; }
+.zone2-box .tip { font-size:12px; opacity:.75; margin-top:8px; }
+@media (max-width:768px) { .chart-row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🏃 Tiger 跑步数据仪表盘 <small>2022-10-27 ~ 2026-06-09</small></h1>
+
+<div class="kpi-grid">
+<div class="kpi"><div class="lab">总次数</div><div class="val">120</div><div class="unit">次</div></div>
+<div class="kpi"><div class="lab">总距离</div><div class="val">830</div><div class="unit">km</div></div>
+<div class="kpi"><div class="lab">总用时</div><div class="val">90</div><div class="unit">小时</div></div>
+<div class="kpi"><div class="lab">平均配速</div><div class="val">6.6</div><div class="unit">min/km</div></div>
+<div class="kpi"><div class="lab">平均心率</div><div class="val">143</div><div class="unit">bpm</div></div>
+<div class="kpi"><div class="lab">最快配速</div><div class="val">5.3</div><div class="unit">min/km</div></div>
+<div class="kpi"><div class="lab">最远单次</div><div class="val">22.0</div><div class="unit">km</div></div>
+<div class="kpi zone-green"><div class="lab">当前体重</div><div class="val">70.8</div><div class="unit">kg</div></div>
+<div class="kpi accent"><div class="lab">体脂率</div><div class="val">19.7%</div></div>
+<div class="kpi"><div class="lab">VO₂max</div><div class="val">52.2</div><div class="unit">ml/kg/min</div></div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card"><h3>📊 月跑量趋势</h3><canvas id="monthlyChart"></canvas></div>
+<div class="chart-card"><h3>💚 Zone2 刷脂分析</h3><canvas id="hrChart"></canvas></div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card"><h3>🏃 配速分布</h3><canvas id="paceChart"></canvas></div>
+<div class="chart-card"><h3>📐 距离分布</h3><canvas id="distChart"></canvas></div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card"><h3>📅 喜欢哪天跑步</h3><canvas id="weekChart"></canvas></div>
+<div class="chart-card"><h3>🔽 最近20次配速趋势</h3><canvas id="trendChart"></canvas></div>
+</div>
+
+<div class="chart-row">
+<div class="zone2-box">
+<div class="lab">你的Zone2刷脂区间</div>
+<div class="val">132-142 bpm</div>
+<div class="tip">配速约 6:00-6:45/km · 能完整说一句话但不喘的程度</div>
+</div>
+<div class="insight-box">
+<h3>💡 关键发现</h3>
+<ul>
+<li>🔴 你 <em>52%</em> 的跑步心率高于Zone2（>142bpm），超过一半跑太快了，<span class="badge red">不是刷脂跑</span></li>
+<li>✅ Zone2刷脂区间只占 <em>42%</em>，把剩下的10%跑慢点就能提升刷脂效率</li>
+<li>📈 月跑量峰值 <em>102km</em>（2026年1月），底子非常扎实</li>
+<li>⚡ 历史最快配速 <em>5.3 min/km</em>，说明你有速度潜力</li>
+<li>🎯 目标：70kg / 17%体脂 → 每周2次Zone2跑，每次45-50分钟</li>
+</ul>
+</div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card full"><h3>📈 月跑量 + 次数双轴图</h3><canvas id="dualChart" height="80"></canvas></div>
+</div>
+
+</div>
+<script>
+function chart(id,cfg){new Chart(document.getElementById(id),cfg)}
+
+chart('monthlyChart',{type:'bar',data:{labels:["2022-10","2023-05","2023-08","2023-09","2024-04","2024-10","2025-01","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],datasets:[{label:'跑量(km)',data:[1,3,3,2,2,7,3,20,26,33,41,38,24,39,57,98,102,33,97,101,69,30],backgroundColor:'#2563eb',borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#e2e8f0'}}}}});
+
+chart('hrChart',{type:'doughnut',data:{labels:['Zone2刷脂 (132-142)','高于Zone2 (>142) 跑太快','低于Zone2 (<132)'],datasets:[{data:[53,60,7],backgroundColor:['#059669','#dc2626','#3b82f6'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+
+chart('paceChart',{type:'bar',data:{labels:["<5:30","5:30-6:00","6:00-6:30","6:30-7:00","7:00-8:00",">8:00"],datasets:[{label:'次数',data:[5,10,41,37,19,8],backgroundColor:'#7c3aed',borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#e2e8f0'}}}}});
+
+chart('distChart',{type:'bar',data:{labels:["0-3km","3-5km","5-7km","7-10km","10-15km","15-21km","半马+"],datasets:[{label:'次数',data:[8,23,47,8,25,6,3],backgroundColor:'#0891b2',borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#e2e8f0'}}}}});
+
+chart('weekChart',{type:'bar',data:{labels:["周一","周二","周三","周四","周五","周六","周日"],datasets:[{label:'跑步次数',data:[8,26,12,18,10,26,20],backgroundColor:'#d97706',borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#e2e8f0'}}}}});
+
+chart('trendChart',{type:'line',data:{labels:["2026-04-05","2026-04-11","2026-04-16","2026-04-17","2026-04-19","2026-04-21","2026-04-26","2026-04-30","2026-05-08","2026-05-12","2026-05-17","2026-05-19","2026-05-21","2026-05-23","2026-05-27","2026-05-29","2026-06-02","2026-06-03","2026-06-06","2026-06-09"],datasets:[{label:'配速(min/km)',data:[6.8,6.7,6.8,7.2,7.3,6.7,6.6,6.3,6,6.1,6.6,6.8,6.1,7.3,6.4,6.1,6.3,5.5,6.7,6],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{reverse:true,grid:{color:'#e2e8f0'}}}}});
+
+chart('dualChart',{type:'bar',data:{labels:["2022-10","2023-05","2023-08","2023-09","2024-04","2024-10","2025-01","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],datasets:[{label:'跑量(km)',data:[1,3,3,2,2,7,3,20,26,33,41,38,24,39,57,98,102,33,97,101,69,30],backgroundColor:'#2563eb',yAxisID:'y',borderRadius:4,order:2},{label:'次数',data:[1,1,1,1,1,3,2,5,6,8,7,9,5,7,8,11,10,4,9,9,8,4],type:'line',borderColor:'#059669',backgroundColor:'#059669',pointBackgroundColor:'#059669',yAxisID:'y1',tension:.3,order:1}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11,weight:'bold'}}}},scales:{y:{beginAtZero:true,position:'left',grid:{color:'#e2e8f0'}},y1:{beginAtZero:true,position:'right',grid:{display:false}}}}});
+</script>
+</body></html>
