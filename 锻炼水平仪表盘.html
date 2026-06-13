@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiger 锻炼</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f0f1a;--surface:#1a1a2e;--surface2:#252540;--primary:#6c63ff;--primary-light:#8b83ff;--accent:#4ecdc4;--warn:#ffd93d;--danger:#ff6b6b;--text:#e8e8f0;--text2:#9898b8;--text3:#666688;--radius:16px;--shadow:0 4px 24px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%}
+body{font-family:"Inter",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;height:100vh}
+.sidebar{width:220px;background:var(--surface);padding:24px 0;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.04)}
+.sidebar .logo{padding:0 24px 24px;font-size:18px;font-weight:700;letter-spacing:-.3px}
+.sidebar .logo span{color:var(--primary-light)}.sidebar .logo small{display:block;font-size:11px;font-weight:400;color:var(--text3);margin-top:2px}
+.nav{flex:1;padding:0 12px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;cursor:pointer;color:var(--text2);font-size:14px;transition:.2s;margin-bottom:4px;user-select:none}
+.nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:rgba(108,99,255,.15);color:var(--primary-light)}
+.nav-item svg{width:20px;height:20px;flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:32px}
+.main::-webkit-scrollbar{width:6px}.main::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+.page{display:none;animation:fadeIn .3s ease}.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:28px}.page-header h2{font-size:26px;font-weight:700}.page-header p{color:var(--text2);font-size:14px;margin-top:4px}
+.row{display:grid;gap:16px;margin-bottom:24px}.row-2{grid-template-columns:1fr 1fr}.row-3{grid-template-columns:1fr 1fr 1fr}.row-4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.04)}
+.card-header{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+.score-wrap{display:flex;gap:32px;align-items:center}
+.score-ring-wrap{position:relative;width:180px;height:180px;flex-shrink:0}
+.score-ring-wrap canvas{position:absolute;top:0;left:0}
+.score-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring-inner .num{font-size:48px;font-weight:800}.score-ring-inner .lbl{font-size:12px;color:var(--text3);margin-top:4px}
+.score-details{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.score-detail{display:flex;flex-direction:column;gap:4px}
+.score-detail .label{font-size:12px;color:var(--text3)}
+.score-detail .bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.score-detail .bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.score-detail .value{font-size:14px;font-weight:600}
+.big-num{font-size:32px;font-weight:700}.stat-label{font-size:13px;color:var(--text2);margin-top:4px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.04);margin-bottom:24px}
+.chart-wrap{position:relative}
+.badge{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-green{background:rgba(78,205,196,.15);color:var(--accent)}
+.badge-yellow{background:rgba(255,217,61,.15);color:var(--warn)}
+.badge-red{background:rgba(255,107,107,.15);color:var(--danger)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--surface2);font-weight:600;color:var(--text3);font-size:12px;text-transform:uppercase}
+tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+tbody tr:hover td{background:rgba(108,99,255,.06)}
+.today-hero{background:linear-gradient(135deg,#6c63ff,#3b82f6 50%,#4ecdc4);border-radius:var(--radius);padding:32px;margin-bottom:24px;color:#fff;position:relative;overflow:hidden}
+.today-hero::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width=60 height=60 viewBox=0 0 60 60 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=none%3E%3Cg fill=%23fff fill-opacity=0.05%3E%3Cpath d=M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");opacity:.3}
+.today-hero h2{font-size:28px;font-weight:700;position:relative}
+.today-hero .date{font-size:14px;opacity:.8;margin-top:4px;position:relative}
+.today-hero .plan-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin-top:20px;position:relative;max-width:500px}
+.today-hero .plan-grid .label{opacity:.8;font-size:14px}
+.today-hero .plan-grid .value{font-size:16px;font-weight:600}
+.today-hero .tip{margin-top:20px;background:rgba(255,255,255,.12);border-radius:12px;padding:14px 18px;font-size:14px;line-height:1.5}
+.plan-week{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.plan-day-card{background:var(--surface);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,.04);border-top:3px solid var(--primary)}
+.plan-day-card.run{border-top-color:var(--accent)}.plan-day-card.rest{border-top-color:var(--danger)}
+.plan-day-card h4{font-size:14px;font-weight:700;margin-bottom:8px}
+.plan-day-card .type{font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.plan-day-card p{font-size:12px;color:var(--text2);line-height:1.7}
+@media(max-width:768px){.sidebar{display:none}.main{padding:16px}.row-2,.row-3,.row-4{grid-template-columns:1fr}.score-wrap{flex-direction:column}.score-details{grid-template-columns:1fr}.plan-week{grid-template-columns:1fr 1fr}}
+</style></head><body><div class="app">  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">Tiger<span>Fit</span><small>强身健体</small></div>
+    <div class="nav">
+      <div class="nav-item active" data-page="today">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        今天练什么
+      </div>
+      <div class="nav-item" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        整体数据
+      </div>
+      <div class="nav-item" data-page="running">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        跑步分析
+      </div>
+      <div class="nav-item" data-page="plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        训练计划
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.04)">
+      <div style="font-size:11px;color:var(--text3)">更新于 2026-06-13</div>
+    </div>
+  </div>
+  <div class="main">
+
+    <!-- TODAY -->
+    <div class="page active" id="page-today">
+      <div class="today-hero" id="todayHero">
+        <h2 id="todayTitle">明天练什么？</h2>
+        <div class="date" id="todayDate"></div>
+        <div class="plan-grid">
+          <span class="label">类型</span><span class="value" id="todayType">-</span>
+          <span class="label">距离</span><span class="value" id="todayDist">-</span>
+          <span class="label">配速</span><span class="value" id="todayPace">-</span>
+          <span class="label">心率</span><span class="value" id="todayHR">-</span>
+          <span class="label">时间</span><span class="value" id="todayDur">-</span>
+        </div>
+        <div class="tip" id="todayTip"></div>
+      </div>
+      <div class="row row-2">
+        <div class="card"><div class="card-header">最近跑步</div>
+          <div class="table-wrap"><table><thead><tr><th>日期</th><th>距离</th><th>配速</th><th>心率</th></tr></thead><tbody id="todayRecentRuns"></tbody></table></div>
+        </div>
+        <div class="card"><div class="card-header">本周训练安排</div>
+          <div class="plan-week" style="grid-template-columns:1fr;gap:8px" id="thisWeekPlan"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="page" id="page-overview">
+      <div class="page-header"><h2>整体数据</h2><p>你的跑步全貌，一目了然</p></div>
+      <div class="card" style="margin-bottom:24px">
+        <div class="score-wrap">
+          <div class="score-ring-wrap"><canvas id="gaugeCanvas" width="180" height="180"></canvas>
+            <div class="score-ring-inner"><span class="num" id="overallScore">0</span><span class="lbl">综合锻炼评分</span></div>
+          </div>
+          <div class="score-details" id="scoreDetails"></div>
+        </div>
+      </div>
+      <div class="row row-4" id="overviewStats"></div>
+      <div class="chart-card"><div class="card-header">月跑量走势</div><div class="chart-wrap" style="height:260px"><canvas id="monthlyChart"></canvas></div></div>
+    </div>
+
+    <!-- RUNNING -->
+    <div class="page" id="page-running">
+      <div class="page-header"><h2>跑步分析</h2><p>120次跑步的详细数据</p></div>
+      <div class="row row-2">
+        <div class="chart-card"><div class="card-header">配速趋势</div><div class="chart-wrap" style="height:240px"><canvas id="paceChart"></canvas></div></div>
+        <div class="chart-card"><div class="card-header">周几跑步分布</div><div class="chart-wrap" style="height:240px"><canvas id="weekdayChart"></canvas></div></div>
+      </div>
+      <div class="row row-3" id="runningStats"></div>
+      <div class="chart-card"><div class="card-header">最近30次跑步</div>
+        <div class="table-wrap"><table><thead><tr><th>日期</th><th>距离</th><th>用时</th><th>配速</th><th>心率</th><th>卡路里</th></tr></thead><tbody id="runningTable"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- PLAN -->
+    <div class="page" id="page-plan">
+      <div class="page-header"><h2>训练计划</h2><p>目标 70kg / 17% 体脂 · 4周循环</p></div>
+      <div class="plan-week" style="margin-bottom:24px">
+        <div class="plan-day-card"><div class="type">周一</div><h4>推日</h4><p>史密斯卧推 5×5 100kg<br>上斜哑铃卧推 4×8-10<br>坐姿哑铃肩推 4×10<br>哑铃侧平举 4×12-15</p></div>
+        <div class="plan-day-card run"><div class="type">周二</div><h4>Zone 2 跑</h4><p>时长 45-50min<br>心率 135-142 bpm<br>配速 6:00-6:30/km</p></div>
+        <div class="plan-day-card"><div class="type">周三</div><h4>拉日</h4><p>引体向上 4×8-10<br>杠铃划船 4×8-10<br>绳索划船 3×10-12<br>面拉 4×12-15</p></div>
+        <div class="plan-day-card run"><div class="type">周四</div><h4>Zone 2 跑</h4><p>时长 45-50min<br>心率 135-142 bpm</p></div>
+        <div class="plan-day-card"><div class="type">周五</div><h4>腿日</h4><p>腿举 4×8-10<br>腿屈伸 4×10-12<br>坐姿腿弯举 4×10<br>罗马尼亚硬拉 3×10-12</p></div>
+        <div class="plan-day-card run"><div class="type">周日</div><h4>长距离 Zone 2 跑</h4><p>时长 60min<br>心率 135-142 bpm</p></div>
+      </div>
+      <div class="card"><div class="card-header">营养备忘</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px;color:var(--text2)">
+          <div>蛋白质 ~120g/天</div><div>练后蛋白粉照喝</div><div>如果特别累多吃一点</div><div>碳水不用刻意控制</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app --><script>
+const data = {
+  runs: [{"d": "2022-10-27", "dist": 1.41, "dur": 11.2, "pace": 7.94, "cal": 101, "hr": 139, "wd": 3},    {"d": "2023-05-04", "dist": 3.12, "dur": 22.6, "pace": 7.25, "cal": 209, "hr": 153, "wd": 3},    {"d": "2023-08-16", "dist": 3.02, "dur": 19.8, "pace": 6.56, "cal": 194, "hr": 147, "wd": 2},    {"d": "2023-08-16", "dist": 0.82, "dur": 7.6, "pace": 9.29, "cal": 37, "hr": 151, "wd": 2},    {"d": "2023-09-16", "dist": 1.82, "dur": 19.7, "pace": 10.85, "cal": 83, "hr": 148, "wd": 5},    {"d": "2023-10-21", "dist": 0.39, "dur": 7.4, "pace": 18.99, "cal": 21, "hr": 79, "wd": 5},    {"d": "2024-04-01", "dist": 1.52, "dur": 8.2, "pace": 5.37, "cal": 96, "hr": 151, "wd": 0},    {"d": "2024-10-05", "dist": 2.06, "dur": 13.1, "pace": 6.38, "cal": 134, "hr": 152, "wd": 5},    {"d": "2024-10-07", "dist": 2.06, "dur": 11.9, "pace": 5.76, "cal": 132, "hr": 151, "wd": 0},    {"d": "2024-10-19", "dist": 3.0, "dur": 18.4, "pace": 6.14, "cal": 227, "hr": 158, "wd": 5},    {"d": "2025-01-16", "dist": 1.1, "dur": 6.8, "pace": 6.16, "cal": 70, "hr": 146, "wd": 3},    {"d": "2025-01-20", "dist": 1.49, "dur": 12.0, "pace": 8.08, "cal": 121, "hr": 134, "wd": 0},    {"d": "2025-04-06", "dist": 3.03, "dur": 19.2, "pace": 6.34, "cal": 201, "hr": 151, "wd": 6},    {"d": "2025-04-15", "dist": 3.01, "dur": 17.9, "pace": 5.93, "cal": 210, "hr": 158, "wd": 1},    {"d": "2025-04-17", "dist": 3.54, "dur": 21.4, "pace": 6.04, "cal": 253, "hr": 157, "wd": 3},    {"d": "2025-04-27", "dist": 5.01, "dur": 31.0, "pace": 6.2, "cal": 350, "hr": 152, "wd": 6},    {"d": "2025-04-29", "dist": 5.22, "dur": 33.6, "pace": 6.43, "cal": 351, "hr": 151, "wd": 1},    {"d": "2025-05-03", "dist": 3.02, "dur": 19.4, "pace": 6.42, "cal": 210, "hr": 148, "wd": 5},    {"d": "2025-05-10", "dist": 3.02, "dur": 19.4, "pace": 6.42, "cal": 205, "hr": 149, "wd": 5},    {"d": "2025-05-11", "dist": 5.01, "dur": 33.9, "pace": 6.77, "cal": 360, "hr": 146, "wd": 6},    {"d": "2025-05-13", "dist": 5.01, "dur": 32.7, "pace": 6.52, "cal": 337, "hr": 143, "wd": 1},    {"d": "2025-05-24", "dist": 5.09, "dur": 33.1, "pace": 6.51, "cal": 339, "hr": 149, "wd": 5},    {"d": "2025-05-27", "dist": 5.1, "dur": 34.3, "pace": 6.73, "cal": 335, "hr": 147, "wd": 1},    {"d": "2025-06-02", "dist": 4.03, "dur": 27.1, "pace": 6.72, "cal": 259, "hr": 150, "wd": 0},    {"d": "2025-06-04", "dist": 5.07, "dur": 34.2, "pace": 6.76, "cal": 356, "hr": 150, "wd": 2},    {"d": "2025-06-09", "dist": 0.23, "dur": 1.9, "pace": 8.06, "cal": 13, "hr": 84, "wd": 0},    {"d": "2025-06-09", "dist": 5.11, "dur": 31.7, "pace": 6.21, "cal": 336, "hr": 145, "wd": 0},    {"d": "2025-06-15", "dist": 3.02, "dur": 20.6, "pace": 6.83, "cal": 201, "hr": 149, "wd": 6},    {"d": "2025-06-17", "dist": 5.02, "dur": 32.8, "pace": 6.53, "cal": 346, "hr": 148, "wd": 1},    {"d": "2025-06-19", "dist": 3.02, "dur": 19.5, "pace": 6.46, "cal": 205, "hr": 149, "wd": 3},    {"d": "2025-06-21", "dist": 4.01, "dur": 27.2, "pace": 6.79, "cal": 283, "hr": 149, "wd": 5},    {"d": "2025-06-28", "dist": 3.53, "dur": 24.9, "pace": 7.06, "cal": 238, "hr": 148, "wd": 5},    {"d": "2025-06-29", "dist": 0.96, "dur": 15.9, "pace": 16.6, "cal": 93, "hr": 0, "wd": 6},    {"d": "2025-07-01", "dist": 5.17, "dur": 35.1, "pace": 6.79, "cal": 376, "hr": 151, "wd": 1},    {"d": "2025-07-06", "dist": 5.02, "dur": 34.8, "pace": 6.93, "cal": 362, "hr": 148, "wd": 6},    {"d": "2025-07-08", "dist": 5.21, "dur": 43.0, "pace": 8.25, "cal": 369, "hr": 138, "wd": 1},    {"d": "2025-07-12", "dist": 7.02, "dur": 51.9, "pace": 7.39, "cal": 513, "hr": 142, "wd": 5},    {"d": "2025-07-19", "dist": 9.01, "dur": 74.0, "pace": 8.21, "cal": 690, "hr": 142, "wd": 5},    {"d": "2025-07-22", "dist": 4.96, "dur": 41.5, "pace": 8.36, "cal": 345, "hr": 129, "wd": 1},    {"d": "2025-07-29", "dist": 5.04, "dur": 37.0, "pace": 7.35, "cal": 353, "hr": 139, "wd": 1},    {"d": "2025-08-02", "dist": 5.0, "dur": 40.2, "pace": 8.03, "cal": 326, "hr": 138, "wd": 5},    {"d": "2025-08-09", "dist": 4.02, "dur": 28.5, "pace": 7.09, "cal": 273, "hr": 143, "wd": 5},    {"d": "2025-08-11", "dist": 4.13, "dur": 30.9, "pace": 7.49, "cal": 277, "hr": 148, "wd": 0},    {"d": "2025-08-15", "dist": 3.01, "dur": 21.7, "pace": 7.21, "cal": 208, "hr": 141, "wd": 4},    {"d": "2025-08-19", "dist": 5.06, "dur": 34.1, "pace": 6.74, "cal": 334, "hr": 155, "wd": 1},    {"d": "2025-08-21", "dist": 5.0, "dur": 35.5, "pace": 7.1, "cal": 335, "hr": 148, "wd": 3},    {"d": "2025-08-23", "dist": 3.02, "dur": 21.9, "pace": 7.26, "cal": 196, "hr": 135, "wd": 5},    {"d": "2025-08-28", "dist": 4.01, "dur": 27.1, "pace": 6.76, "cal": 269, "hr": 144, "wd": 3},    {"d": "2025-08-30", "dist": 5.01, "dur": 35.6, "pace": 7.1, "cal": 328, "hr": 136, "wd": 5},    {"d": "2025-09-04", "dist": 5.0, "dur": 34.5, "pace": 6.89, "cal": 342, "hr": 144, "wd": 3},    {"d": "2025-09-09", "dist": 5.01, "dur": 32.8, "pace": 6.55, "cal": 327, "hr": 140, "wd": 1},    {"d": "2025-09-14", "dist": 5.01, "dur": 32.2, "pace": 6.42, "cal": 340, "hr": 147, "wd": 6},    {"d": "2025-09-23", "dist": 4.02, "dur": 35.3, "pace": 8.78, "cal": 255, "hr": 123, "wd": 1},    {"d": "2025-09-26", "dist": 5.01, "dur": 32.6, "pace": 6.5, "cal": 344, "hr": 146, "wd": 4},    {"d": "2025-10-01", "dist": 5.01, "dur": 32.3, "pace": 6.44, "cal": 330, "hr": 149, "wd": 2},    {"d": "2025-10-02", "dist": 5.02, "dur": 34.0, "pace": 6.78, "cal": 335, "hr": 136, "wd": 3},    {"d": "2025-10-12", "dist": 5.02, "dur": 30.6, "pace": 6.1, "cal": 330, "hr": 148, "wd": 6},    {"d": "2025-10-13", "dist": 5.08, "dur": 33.9, "pace": 6.68, "cal": 337, "hr": 147, "wd": 0},    {"d": "2025-10-26", "dist": 5.01, "dur": 31.1, "pace": 6.21, "cal": 332, "hr": 158, "wd": 6},    {"d": "2025-10-29", "dist": 3.21, "dur": 19.7, "pace": 6.15, "cal": 210, "hr": 145, "wd": 2},    {"d": "2025-10-31", "dist": 11.14, "dur": 71.6, "pace": 6.43, "cal": 732, "hr": 146, "wd": 4},    {"d": "2025-11-04", "dist": 5.02, "dur": 30.0, "pace": 5.98, "cal": 319, "hr": 139, "wd": 1},    {"d": "2025-11-09", "dist": 13.37, "dur": 84.1, "pace": 6.29, "cal": 848, "hr": 148, "wd": 6},    {"d": "2025-11-13", "dist": 5.0, "dur": 28.9, "pace": 5.78, "cal": 332, "hr": 147, "wd": 3},    {"d": "2025-11-15", "dist": 5.02, "dur": 26.7, "pace": 5.31, "cal": 323, "hr": 143, "wd": 5},    {"d": "2025-11-18", "dist": 3.36, "dur": 17.6, "pace": 5.25, "cal": 216, "hr": 148, "wd": 1},    {"d": "2025-11-22", "dist": 10.01, "dur": 62.2, "pace": 6.21, "cal": 637, "hr": 154, "wd": 5},    {"d": "2025-11-26", "dist": 5.02, "dur": 26.6, "pace": 5.3, "cal": 325, "hr": 151, "wd": 2},    {"d": "2025-11-28", "dist": 10.03, "dur": 58.9, "pace": 5.87, "cal": 649, "hr": 141, "wd": 4},    {"d": "2025-12-02", "dist": 5.24, "dur": 35.1, "pace": 6.7, "cal": 339, "hr": 136, "wd": 1},    {"d": "2025-12-04", "dist": 7.01, "dur": 49.4, "pace": 7.04, "cal": 447, "hr": 133, "wd": 3},    {"d": "2025-12-06", "dist": 10.7, "dur": 60.9, "pace": 5.69, "cal": 700, "hr": 149, "wd": 5},    {"d": "2025-12-13", "dist": 5.0, "dur": 34.2, "pace": 6.84, "cal": 333, "hr": 135, "wd": 5},    {"d": "2025-12-14", "dist": 15.01, "dur": 90.9, "pace": 6.06, "cal": 959, "hr": 148, "wd": 6},    {"d": "2025-12-15", "dist": 1.51, "dur": 14.9, "pace": 9.86, "cal": 119, "hr": 110, "wd": 0},    {"d": "2025-12-16", "dist": 5.12, "dur": 36.6, "pace": 7.15, "cal": 322, "hr": 123, "wd": 1},    {"d": "2025-12-22", "dist": 0.94, "dur": 7.4, "pace": 7.85, "cal": 60, "hr": 105, "wd": 0},    {"d": "2025-12-23", "dist": 10.02, "dur": 71.4, "pace": 7.13, "cal": 629, "hr": 128, "wd": 1},    {"d": "2025-12-25", "dist": 5.04, "dur": 37.5, "pace": 7.45, "cal": 314, "hr": 133, "wd": 3},    {"d": "2025-12-28", "dist": 22.02, "dur": 137.5, "pace": 6.25, "cal": 1434, "hr": 147, "wd": 6},    {"d": "2025-12-31", "dist": 10.94, "dur": 70.4, "pace": 6.43, "cal": 737, "hr": 137, "wd": 2},    {"d": "2026-01-07", "dist": 10.71, "dur": 72.3, "pace": 6.75, "cal": 789, "hr": 140, "wd": 2},    {"d": "2026-01-09", "dist": 8.81, "dur": 58.7, "pace": 6.66, "cal": 585, "hr": 142, "wd": 4},    {"d": "2026-01-11", "dist": 15.41, "dur": 96.8, "pace": 6.28, "cal": 1021, "hr": 139, "wd": 6},    {"d": "2026-01-13", "dist": 6.75, "dur": 43.1, "pace": 6.38, "cal": 452, "hr": 135, "wd": 1},    {"d": "2026-01-16", "dist": 10.01, "dur": 62.9, "pace": 6.28, "cal": 670, "hr": 144, "wd": 4},    {"d": "2026-01-18", "dist": 15.75, "dur": 93.9, "pace": 5.96, "cal": 1031, "hr": 141, "wd": 6},    {"d": "2026-01-24", "dist": 5.05, "dur": 36.2, "pace": 7.16, "cal": 360, "hr": 137, "wd": 5},    {"d": "2026-01-25", "dist": 11.55, "dur": 72.4, "pace": 6.27, "cal": 743, "hr": 140, "wd": 6},    {"d": "2026-01-29", "dist": 7.01, "dur": 44.9, "pace": 6.41, "cal": 454, "hr": 134, "wd": 3},    {"d": "2026-01-31", "dist": 11.32, "dur": 70.0, "pace": 6.19, "cal": 740, "hr": 139, "wd": 5},    {"d": "2026-02-03", "dist": 10.01, "dur": 63.5, "pace": 6.35, "cal": 652, "hr": 134, "wd": 1},    {"d": "2026-02-07", "dist": 12.74, "dur": 74.1, "pace": 5.81, "cal": 826, "hr": 138, "wd": 5},    {"d": "2026-02-23", "dist": 0.6, "dur": 5.2, "pace": 8.69, "cal": 40, "hr": 126, "wd": 0},    {"d": "2026-02-24", "dist": 3.33, "dur": 22.4, "pace": 6.73, "cal": 238, "hr": 139, "wd": 1},    {"d": "2026-02-26", "dist": 7.14, "dur": 47.3, "pace": 6.63, "cal": 486, "hr": 135, "wd": 3},    {"d": "2026-03-04", "dist": 10.01, "dur": 61.4, "pace": 6.14, "cal": 690, "hr": 144, "wd": 2},    {"d": "2026-03-07", "dist": 21.82, "dur": 131.1, "pace": 6.01, "cal": 1510, "hr": 148, "wd": 5},    {"d": "2026-03-11", "dist": 5.02, "dur": 30.7, "pace": 6.12, "cal": 333, "hr": 141, "wd": 2},    {"d": "2026-03-15", "dist": 5.02, "dur": 32.1, "pace": 6.39, "cal": 327, "hr": 139, "wd": 6},    {"d": "2026-03-17", "dist": 10.11, "dur": 66.7, "pace": 6.59, "cal": 675, "hr": 142, "wd": 1},    {"d": "2026-03-18", "dist": 5.02, "dur": 32.9, "pace": 6.56, "cal": 342, "hr": 139, "wd": 2},    {"d": "2026-03-21", "dist": 20.21, "dur": 118.5, "pace": 5.86, "cal": 1343, "hr": 156, "wd": 5},    {"d": "2026-03-27", "dist": 15.01, "dur": 90.2, "pace": 6.01, "cal": 1015, "hr": 145, "wd": 4},    {"d": "2026-03-29", "dist": 5.07, "dur": 34.6, "pace": 6.82, "cal": 384, "hr": 134, "wd": 6},    {"d": "2026-04-02", "dist": 5.53, "dur": 36.6, "pace": 6.61, "cal": 357, "hr": 143, "wd": 3},    {"d": "2026-04-05", "dist": 0.19, "dur": 1.3, "pace": 6.8, "cal": 12, "hr": 0, "wd": 6},    {"d": "2026-04-05", "dist": 21.24, "dur": 144.3, "pace": 6.8, "cal": 1403, "hr": 147, "wd": 6},    {"d": "2026-04-11", "dist": 10.01, "dur": 66.6, "pace": 6.65, "cal": 663, "hr": 136, "wd": 5},    {"d": "2026-04-16", "dist": 10.01, "dur": 68.6, "pace": 6.85, "cal": 659, "hr": 138, "wd": 3},    {"d": "2026-04-17", "dist": 5.08, "dur": 36.7, "pace": 7.22, "cal": 339, "hr": 129, "wd": 4},    {"d": "2026-04-19", "dist": 11.03, "dur": 80.0, "pace": 7.25, "cal": 694, "hr": 136, "wd": 6},    {"d": "2026-04-21", "dist": 0.59, "dur": 4.5, "pace": 7.62, "cal": 35, "hr": 150, "wd": 1},    {"d": "2026-04-21", "dist": 10.08, "dur": 67.1, "pace": 6.66, "cal": 644, "hr": 131, "wd": 1},    {"d": "2026-04-26", "dist": 12.62, "dur": 83.3, "pace": 6.6, "cal": 801, "hr": 140, "wd": 6},    {"d": "2026-04-30", "dist": 15.01, "dur": 95.2, "pace": 6.34, "cal": 960, "hr": 137, "wd": 3},    {"d": "2026-05-04", "dist": 0.92, "dur": 8.0, "pace": 8.72, "cal": 63, "hr": 119, "wd": 0},    {"d": "2026-05-08", "dist": 14.03, "dur": 84.6, "pace": 6.03, "cal": 898, "hr": 134, "wd": 4},    {"d": "2026-05-11", "dist": 0.18, "dur": 1.2, "pace": 6.89, "cal": 12, "hr": 108, "wd": 0},    {"d": "2026-05-12", "dist": 7.5, "dur": 45.9, "pace": 6.11, "cal": 490, "hr": 142, "wd": 1},    {"d": "2026-05-17", "dist": 10.55, "dur": 70.1, "pace": 6.64, "cal": 700, "hr": 141, "wd": 6},    {"d": "2026-05-19", "dist": 6.4, "dur": 43.3, "pace": 6.77, "cal": 405, "hr": 137, "wd": 1},    {"d": "2026-05-21", "dist": 6.43, "dur": 39.3, "pace": 6.12, "cal": 402, "hr": 136, "wd": 3},    {"d": "2026-05-23", "dist": 7.83, "dur": 57.3, "pace": 7.32, "cal": 515, "hr": 140, "wd": 5},    {"d": "2026-05-27", "dist": 5.16, "dur": 33.1, "pace": 6.42, "cal": 324, "hr": 139, "wd": 2},    {"d": "2026-05-29", "dist": 11.03, "dur": 67.4, "pace": 6.11, "cal": 704, "hr": 141, "wd": 4},    {"d": "2026-06-02", "dist": 10.06, "dur": 62.9, "pace": 6.25, "cal": 637, "hr": 139, "wd": 1},    {"d": "2026-06-03", "dist": 5.06, "dur": 27.7, "pace": 5.47, "cal": 321, "hr": 147, "wd": 2},    {"d": "2026-06-06", "dist": 5.04, "dur": 33.8, "pace": 6.71, "cal": 314, "hr": 132, "wd": 5},    {"d": "2026-06-09", "dist": 10.33, "dur": 61.7, "pace": 5.97, "cal": 652, "hr": 136, "wd": 1}  ]
+};
+
+// ====== DATA PROCESSING ======
+const sig = data.runs.filter(r => r.dist >= 1.0);
+const total = sig.length;
+const totalDist = sig.reduce((s,r) => s+r.dist, 0);
+const totalDur = sig.reduce((s,r) => s+r.dur, 0);
+const avgDist = +(totalDist/total).toFixed(2);
+const avgPace = +(sig.reduce((s,r) => s+r.pace, 0)/total).toFixed(2);
+const avgHr = Math.round(sig.filter(r => r.hr>0).reduce((s,r) => s+r.hr, 0) / sig.filter(r => r.hr>0).length);
+const fastest = sig.filter(r => r.pace>0).reduce((a,b) => a.pace<b.pace?a:b);
+const longest = sig.reduce((a,b) => a.dist>b.dist?a:b);
+const fiveks = sig.filter(r => r.dist>=4.8 && r.dist<=5.2);
+const best5k = fiveks.reduce((a,b) => a.pace<b.pace?a:b);
+
+const monthMap = {};
+for (const r of sig) {
+  const m = r.d.slice(0,7);
+  if (!monthMap[m]) monthMap[m] = {runs:0, dist:0};
+  monthMap[m].runs++; monthMap[m].dist += r.dist;
+}
+const mk = Object.keys(monthMap).sort();
+const last12 = mk.slice(-12);
+const avgMoDist = +(last12.reduce((s,m) => s+monthMap[m].dist,0)/last12.length).toFixed(1);
+const avgMoRuns = +(last12.reduce((s,m) => s+monthMap[m].runs,0)/last12.length).toFixed(1);
+
+const paceM = {};
+for (const r of sig) {
+  if (r.pace > 0) {
+    const m = r.d.slice(0,7);
+    if (!paceM[m]) paceM[m] = {t:0, c:0};
+    paceM[m].t += r.pace; paceM[m].c++;
+  }
+}
+const pmk = Object.keys(paceM).sort();
+
+const wdLbl = ["周日","周一","周二","周三","周四","周五","周六"];
+const wdR = [0,0,0,0,0,0,0], wdD = [0,0,0,0,0,0,0];
+for (const r of sig) { wdR[r.wd]++; wdD[r.wd] += r.dist; }
+
+const scores = {
+  consistency: Math.min(100, avgMoRuns * 25),
+  volume: Math.min(100, avgMoDist / 2),
+  endurance: Math.min(100, +(longest.dist * 5).toFixed(0)),
+  speed: Math.min(100, Math.max(0, 100 - (avgPace - 4) * 25)),
+  heartHealth: Math.min(100, Math.max(0, 100 - (avgHr - 120) * 2))
+};
+const overall = Math.round(Object.values(scores).reduce((s,v)=>s+v,0)/5);
+
+// ====== NAVIGATION ======
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    item.classList.add("active");
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById("page-" + item.dataset.page).classList.add("active");
+  });
+});
+
+// ====== TODAY PAGE ======
+(function() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById("todayDate").textContent = tomorrow.toLocaleDateString("zh-CN", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const wd = tomorrow.getDay();
+  let plan, tip;
+  if (wd === 0) {
+    plan = {type:"长距离 Zone 2 跑",dist:"~9-10 km",pace:"6:20-6:40/km",hr:"135-142 bpm",dur:"60 min"};
+    tip = "按训练计划，周日是长距离有氧跑。重点不是拼速度，而是用低心率跑打好有氧基础。你最近一次长跑（6月9日）10.33km 配速 5.97 心率才 136，Zone 2 底子已经很好。慢慢跑完 60 分钟即可。";
+  } else if (wd === 2 || wd === 4) {
+    const isTue = wd === 2;
+    plan = {type:"Zone 2 跑",dist:"~7-8 km",pace:"6:00-6:30/km",hr:"135-142 bpm",dur:"45-50 min"};
+    tip = (isTue ? "周二" : "周四") + " Zone 2 有氧跑。保持心率 135-142，步频可以稍微提一点。如果膝盖疲劳就缩短到 35-40 分钟。";
+  } else if (wd === 1) {
+    plan = {type:"推日（力量）",dist:"—",pace:"—",hr:"—",dur:"45-60 min"};
+    tip = "周一推日，重点在卧推 5×5 100kg。上斜哑铃卧推和侧平举是新增动作，注意感受胸肌和三角肌发力。";
+  } else if (wd === 3) {
+    plan = {type:"拉日（力量）",dist:"—",pace:"—",hr:"—",dur:"45-60 min"};
+    tip = "周三拉日，引体向上 4×8-10 是核心。杠铃划船注意肩胛骨先收紧再发力。";
+  } else if (wd === 5) {
+    plan = {type:"腿日（力量）",dist:"—",pace:"—",hr:"—",dur:"45-60 min"};
+    tip = "周五腿日，罗马尼亚硬拉是新动作，先轻重量感受臀部发力。腿举 4×8-10。";
+  } else {
+    plan = {type:"休息日",dist:"—",pace:"—",hr:"—",dur:"—"};
+    tip = "周六休息日，好好恢复。可以做拉伸、泡沫轴放松肌肉。周一推日见！";
+  }
+  document.getElementById("todayTitle").textContent = (tomorrow.getDate()===now.getDate())?"今天练什么？":"明天练什么？";
+  document.getElementById("todayType").textContent = plan.type;
+  document.getElementById("todayDist").textContent = plan.dist;
+  document.getElementById("todayPace").textContent = plan.pace;
+  document.getElementById("todayHR").textContent = plan.hr;
+  document.getElementById("todayDur").textContent = plan.dur;
+  document.getElementById("todayTip").innerHTML = tip;
+
+  const r5 = sig.slice().sort((a,b)=>a.d<b.d?1:-1).slice(0,5);
+  document.getElementById("todayRecentRuns").innerHTML = r5.map(r => {
+    const c = r.pace<=5.8?"badge-green":r.pace<=6.8?"badge-yellow":"badge-red";
+    return `<tr><td>${r.d}</td><td>${r.dist} km</td><td><span class="badge ${c}">${r.pace}'/km</span></td><td>${r.hr} bpm</td></tr>`;
+  }).join("");
+
+  const wDays = [{d:"周一",t:"推日",c:""},{d:"周二",t:"Zone 2 跑",c:"run"},{d:"周三",t:"拉日",c:""},{d:"周四",t:"Zone 2 跑",c:"run"},{d:"周五",t:"腿日",c:""},{d:"周六",t:"休息",c:"rest"},{d:"周日",t:"长距离跑",c:"run"}];
+  const ti = now.getDay();
+  document.getElementById("thisWeekPlan").innerHTML = wDays.map((w,i) => {
+    const act = i===(ti+6)%7?' style="border-left:3px solid var(--primary-light);background:rgba(108,99,255,.08)"':'';
+    return `<div class="plan-day-card ${w.c}"${act}><div class="type">${w.d}</div><h4>${w.t}</h4></div>`;
+  }).join("");
+})();// ====== OVERVIEW PAGE ======
+(function() {
+  const c = document.getElementById("gaugeCanvas"), ctx = c.getContext("2d");
+  ctx.clearRect(0,0,180,180);
+  ctx.beginPath(); ctx.arc(90,90,78,-0.75*Math.PI,0.75*Math.PI);
+  ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.lineWidth = 14; ctx.lineCap = "round"; ctx.stroke();
+  const pct = overall/100, sw = 1.5*Math.PI*pct;
+  ctx.beginPath(); ctx.arc(90,90,78,-0.75*Math.PI,-0.75*Math.PI+sw);
+  const g = ctx.createLinearGradient(20,90,160,90);
+  if(overall<40){g.addColorStop(0,"#ff6b6b");g.addColorStop(1,"#ee5a24")}
+  else if(overall<60){g.addColorStop(0,"#f39c12");g.addColorStop(1,"#e67e22")}
+  else if(overall<75){g.addColorStop(0,"#ffd93d");g.addColorStop(1,"#f39c12")}
+  else{g.addColorStop(0,"#4ecdc4");g.addColorStop(1,"#6c63ff")}
+  ctx.strokeStyle = g; ctx.lineWidth = 14; ctx.lineCap = "round"; ctx.stroke();
+
+  let cur = 0;
+  (function anim(){if(cur<overall){cur++;document.getElementById("overallScore").textContent=cur;requestAnimationFrame(anim)}else{document.getElementById("overallScore").textContent=overall}})();
+
+  const sl = {consistency:"出勤率",volume:"跑量",endurance:"耐力",speed:"速度",heartHealth:"心肺"};
+  const sc = {consistency:"#4ecdc4",volume:"#45b7d1",endurance:"#96ceb4",speed:"#ffd93d",heartHealth:"#ff6b6b"};
+  const sd = document.getElementById("scoreDetails");
+  Object.keys(scores).forEach((k,i) => {
+    const v = Math.round(scores[k]);
+    sd.innerHTML += `<div class="score-detail"><div class="label">${sl[k]}</div><div class="bar"><div class="bar-fill" style="width:0;background:${sc[k]}"></div></div><div class="value">${v}/100</div></div>`;
+    setTimeout(() => sd.querySelectorAll(".bar-fill")[i].style.width = v+"%", 300+i*100);
+  });
+
+  document.getElementById("overviewStats").innerHTML = [
+    {n:total,l:"总跑步次数"},{n:Math.round(totalDist)+" km",l:"总跑量"},{n:Math.round(totalDur/60)+" h",l:"总用时"},{n:avgDist+" km",l:"平均单次"},
+    {n:avgPace+"'",l:"平均配速"},{n:avgHr,l:"平均心率"},{n:avgMoDist+" km",l:"月均跑量"},{n:avgMoRuns,l:"月均次数"}
+  ].map(s => `<div class="card" style="text-align:center"><div class="big-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join("");
+
+  new Chart(document.getElementById("monthlyChart"), {
+    type: "bar", data: {
+      labels: mk,
+      datasets: [
+        {label:"跑量 (km)",data:mk.map(m=>Math.round(monthMap[m].dist)),backgroundColor:"rgba(108,99,255,.6)",borderColor:"#6c63ff",borderWidth:1,yAxisID:"y",borderRadius:4},
+        {label:"次数",data:mk.map(m=>monthMap[m].runs),borderColor:"#4ecdc4",backgroundColor:"transparent",borderWidth:2,yAxisID:"y1",type:"line",tension:.3,pointRadius:3,pointBackgroundColor:"#4ecdc4"}
+      ]
+    }, options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{legend:{position:"top",labels:{boxWidth:12,padding:16,color:"#9898b8"}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"#9898b8"}},
+        y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#9898b8",stepSize:2}},
+        x:{grid:{display:false},ticks:{color:"#666688",maxRotation:45,font:{size:10}}}
+      }
+    }
+  });
+})();
+
+// ====== RUNNING PAGE ======
+(function() {
+  new Chart(document.getElementById("paceChart"), {
+    type:"line", data:{
+      labels:pmk,
+      datasets:[{
+        label:"配速 (min/km)", data:pmk.map(m=>+(paceM[m].t/paceM[m].c).toFixed(2)),
+        borderColor:"#ff6b6b",backgroundColor:"rgba(255,107,107,.08)",fill:true,tension:.35,
+        pointRadius:3,pointBackgroundColor:"#ff6b6b"
+      }]
+    }, options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{reverse:true,grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"#9898b8"}},
+        x:{grid:{display:false},ticks:{color:"#666688",font:{size:9},maxRotation:45}}
+      }
+    }
+  });
+
+  new Chart(document.getElementById("weekdayChart"), {
+    type:"radar", data:{
+      labels:wdLbl,
+      datasets:[
+        {label:"次数",data:wdR,borderColor:"#6c63ff",backgroundColor:"rgba(108,99,255,.12)",pointBackgroundColor:"#6c63ff",fill:true},
+        {label:"跑量 (km)",data:wdD.map(v=>Math.round(v)),borderColor:"#4ecdc4",backgroundColor:"rgba(78,205,196,.08)",pointBackgroundColor:"#4ecdc4",fill:true}
+      ]
+    }, options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"top",labels:{boxWidth:12,color:"#9898b8"}}},
+      scales:{r:{beginAtZero:true,grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"#666688",backdropColor:"transparent"}}}
+    }
+  });
+
+  document.getElementById("runningStats").innerHTML = [
+    {n:fastest.pace+"'",l:"最快配速",s:fastest.d},{n:longest.dist+" km",l:"最长距离",s:longest.d},{n:best5k.pace+"'",l:"最佳5k配速",s:best5k.d}
+  ].map(s => `<div class="card" style="text-align:center"><div class="big-num">${s.n}</div><div class="stat-label">${s.l}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${s.s}</div></div>`).join("");
+
+  const r30 = sig.slice().sort((a,b)=>a.d<b.d?1:-1).slice(0,30);
+  document.getElementById("runningTable").innerHTML = r30.map(r => {
+    const c = r.pace<=5.8?"badge-green":r.pace<=6.8?"badge-yellow":"badge-red";
+    return `<tr><td>${r.d}</td><td>${r.dist} km</td><td>${r.dur} min</td><td><span class="badge ${c}">${r.pace}'/km</span></td><td>${r.hr} bpm</td><td>${r.cal}</td></tr>`;
+  }).join("");
+})();
+</script>
+</body>
+</html>
